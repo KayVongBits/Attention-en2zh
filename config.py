@@ -41,7 +41,7 @@ eos_idx = 3
 这些参数控制训练过程中的配置和训练策略。
 """
 # 训练时的批次大小。
-batch_size = 32
+batch_size = 24
 # 训练的总轮次。
 epoch_num = 3
 # 学习率（learning rate）。

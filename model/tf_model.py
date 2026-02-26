@@ -17,6 +17,7 @@ class EmbeddingLayer(nn.Module):
         super(EmbeddingLayer, self).__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.dim = embedding_dim
+        self.d_model = embedding_dim
 
     def forward(self, x):
 
@@ -29,9 +30,10 @@ class PositionalEncoding(nn.Module):
         max_len: The maximum length of the input sequences.
     '''
     def __init__(self, d_model, max_len=5000,dropout=0.1):
+        super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
-        super(PositionalEncoding, self).__init__()
+        
         pe = torch.zeros(max_len, d_model,device=DEVICE)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
@@ -276,11 +278,12 @@ class Transformer(nn.Module):
         self.src_embed = src_embed  # 源语言嵌入模块
         self.tgt_embed = tgt_embed  # 目标语言嵌入模块
         self.generator = generator  # 生成模块
-
+    def encode(self, src, src_mask):
+        return self.encoder(self.src_embed(src), src_mask)
+    def decode(self, memory, src_mask, tgt, tgt_mask):
+        return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
     def forward(self, src, tgt, src_mask, tgt_mask):
-        memory = self.encoder(self.src_embed(src), src_mask)  # 编码器处理源输入，得到memory
-        output = self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)  # 解码器处理目标输入和memory，得到输出
-        return self.generator(output)  # 通过生成模块得到最终的输出概率分布
+        return self.decode(self.encode(src, src_mask), src_mask, tgt, tgt_mask)
     
 def make_model(src_vocab, tgt_vocab, N=6, d_model=512, d_ff=2048, h=8, dropout=0.1):
     '''Helper: Construct a model from hyperparameters.
