@@ -74,12 +74,13 @@ test_model_path = './run/train/exp/weights/best_bleu_26.30.pth'
 设备配置
 这些参数用于配置模型运行的硬件设备。
 """
-# 指定使用的GPU设备的ID。
-# 指定设备ID的列表。
-gpu_id = '0'
-device_id = [0]
-# set device
-if gpu_id != '':
-    device = torch.device(f"cuda:{gpu_id}")
+# 指定使用的GPU设备的ID，可以用逗号分隔多个卡号，例如 '0,1'。
+gpu_id = '0'  # 修改为 '0,1' 来使用两块显卡
+# 解析成整型列表供 DataParallel 等使用
+device_id = [int(x) for x in gpu_id.split(',') if x.strip()]
+
+# set device – 取第一个作为主设备
+if device_id:
+    device = torch.device(f"cuda:{device_id[0]}")
 else:
     device = torch.device('cpu')

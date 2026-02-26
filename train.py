@@ -117,6 +117,7 @@ def test(data, model, criterion):
     with torch.no_grad():
         # 加载模型
         model.load_state_dict(torch.load(config.model_path))
+        model.to(config.device)
         model_par = torch.nn.DataParallel(model)
         model.eval()
         # 开始预测
@@ -147,8 +148,11 @@ def run():
     # 初始化模型
     model = make_model(config.src_vocab_size, config.tgt_vocab_size, config.n_layers,
                        config.d_model, config.d_ff, config.n_heads, config.dropout)
+    # 把模型移动到主设备上
+    model.to(config.device)
 
     #  将模型包装成数据并行模式,这样可以在多个GPU上并行处理数据，提高训练效率
+    # DataParallel会将模型复制到所有可见GPU（CUDA_VISIBLE_DEVICES）上
     model_par = torch.nn.DataParallel(model)
 
     # 训练阶段，选择损失函数和优化器
@@ -166,7 +170,10 @@ def run():
 
 if __name__ == "__main__":
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    # 使用配置中的gpu_id来设置可见的CUDA设备
+    # 如果config.gpu_id = '0,1'，那么两块显卡都会被DataParallel使用
+    if hasattr(config, 'gpu_id') and config.gpu_id:
+        os.environ['CUDA_VISIBLE_DEVICES'] = config.gpu_id
     import warnings
     warnings.filterwarnings('ignore')
     run()
